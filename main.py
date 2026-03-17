@@ -25,6 +25,10 @@ from utils import arg_util, misc, lamb
 from utils.imagenet import build_dataset_to_pretrain
 from utils.lr_control import lr_wd_annealing, get_param_groups
 
+# ===================Δικά μου================
+import wandb
+# ===========================================
+
 
 class LocalDDP(torch.nn.Module):
     def __init__(self, module):
@@ -87,6 +91,22 @@ def main_pt():
     if ep_start >= args.ep: # load from a complete checkpoint file
         print(f'  [*] [PT already done]    Min/Last Recon Loss: {performance_desc}')
     else:   # perform pre-training
+
+
+
+        # ===========================Δικά μου==================================
+        if dist.is_master(): # Μόνο ο leader (rank 0) γράφει στο wandb
+            wandb.init(
+                project="spark-isic-ssl", 
+                name=args.exp_name,
+                config=vars(args),
+                tags = ["Test", "Unfrozen layer4"]
+            )
+        # =====================================================================
+
+
+
+
         tb_lg = misc.TensorboardLogger(args.tb_lg_dir, is_master=dist.is_master(), prefix='pt')
         min_loss = 1e9
         print(f'[PT start] from ep{ep_start}')
@@ -129,6 +149,14 @@ def main_pt():
         print(f'  [*] [PT finished]    Min/Last Recon Loss: {performance_desc},    Total Cost: {(time.time() - pt_start_time) / 60 / 60:.1f}h\n')
         print('\n\n')
         tb_lg.close()
+
+
+        # ========================Δικά μου=========================
+        if dist.is_master():
+            wandb.finish() # Κλείνει το wandb session καθαρά
+        # =========================================================
+
+
         time.sleep(10)
     
     args.remain_time, args.finish_time = '-', time.strftime("%m-%d %H:%M", time.localtime(time.time()))
@@ -182,6 +210,16 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
             me.update(orig_norm=grad_norm)
             tb_lg.update(orig_norm=grad_norm, head='train_hp')
         tb_lg.set_step()
+
+        # =========================Δικά μου=====================
+        if dist.is_master():
+            wandb.log({
+                "iter_loss": loss,
+                "max_lr": max_lr,
+                "orig_norm": grad_norm if grad_norm is not None else 0,
+                "epoch": ep
+            })
+        # ======================================================
     
     me.synchronize_between_processes()
     return {k: meter.global_avg for k, meter in me.meters.items()}
