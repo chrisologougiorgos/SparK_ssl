@@ -84,8 +84,8 @@ def your_convnet_small(pretrained=False, **kwargs):
     model.backbone = timm.create_model('resnext50_32x4d', pretrained=pretrained, **kwargs)
 
     # ΠΑΓΩΜΑ
-    for param in model.backbone.parameters():
-        param.requires_grad = False
+    # for param in model.backbone.parameters():
+    #     param.requires_grad = False
      
     return model
 
