@@ -218,7 +218,7 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
                 "max_lr": max_lr,
                 "orig_norm": grad_norm if grad_norm is not None else 0,
                 "epoch": ep
-            })
+            }, commit=True)
         # ======================================================
     
     me.synchronize_between_processes()
