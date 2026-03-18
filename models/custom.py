@@ -79,7 +79,7 @@ class YourConvNet(nn.Module):
 
 
 @register_model
-def your_convnet_small(pretrained=False, **kwargs):
+def your_convnet_small(pretrained=True, **kwargs):
     model = YourConvNet()
     model.backbone = timm.create_model('resnext50_32x4d', pretrained=pretrained, **kwargs)
 
