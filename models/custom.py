@@ -12,6 +12,8 @@ from timm.models.registry import register_model
 import timm
 import torch.nn.functional as F
 
+import torchvision
+
 
 class YourConvNet(nn.Module):
     """
@@ -80,8 +82,30 @@ class YourConvNet(nn.Module):
 
 @register_model
 def your_convnet_small(pretrained=True, **kwargs):
+    #========== Αρχική Υλοποίηση===================
     model = YourConvNet()
     model.backbone = timm.create_model('resnext50_32x4d', pretrained=pretrained, **kwargs)
+    #==============================================
+
+    #======== Υλοποίηση με torchvision για χρήση Imagenet pretrained weights=======
+    # weights = None
+    # if pretrained == True:
+    #     weights = torchvision.models.ResNeXt50_32X4D_Weights.DEFAULT
+    
+    # full_model = torchvision.models.resnext50_32x4d(weights=weights)
+    # encoder = nn.Sequential(
+    #     full_model.conv1,
+    #     full_model.bn1,
+    #     full_model.relu,
+    #     full_model.maxpool,
+    #     full_model.layer1,
+    #     full_model.layer2,
+    #     full_model.layer3,
+    #     full_model.layer4
+    # )
+    
+    # model = YourConvNet()
+    # model.backbone = encoder
 
     # ΠΑΓΩΜΑ
     # for param in model.backbone.parameters():
