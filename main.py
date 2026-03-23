@@ -46,7 +46,7 @@ def main_pt():
     
     # build data
     print(f'[build data for pre-training] ...\n')
-    dataset_train = build_dataset_to_pretrain(args.data_path, args.input_size)
+    dataset_train, dataset_val = build_dataset_to_pretrain(args.data_path, args.input_size)
     data_loader_train = DataLoader(
         dataset=dataset_train, num_workers=args.dataloader_workers, pin_memory=True,
         batch_sampler=DistInfiniteBatchSampler(
@@ -54,6 +54,25 @@ def main_pt():
             shuffle=True, filling=True, rank=dist.get_rank(), world_size=dist.get_world_size(),
         ), worker_init_fn=worker_init_fn
     )
+
+
+    #=====================VALIDATION========================
+
+    val_sampler = torch.utils.data.distributed.DistributedSampler(
+        dataset_val, num_replicas=dist.get_world_size(), rank=dist.get_rank(), shuffle=False
+    )
+
+    data_loader_val = DataLoader(
+        dataset=dataset_val, 
+        batch_size=args.batch_size_per_gpu, 
+        num_workers=args.dataloader_workers, 
+        pin_memory=True, 
+        sampler=val_sampler, 
+        worker_init_fn=worker_init_fn
+    )
+    #=====================================================
+
+
     itrt_train, iters_train = iter(data_loader_train), len(data_loader_train)
     print(f'[dataloader] gbs={args.glb_batch_size}, lbs={args.batch_size_per_gpu}, iters_train={iters_train}')
     
@@ -163,7 +182,7 @@ def main_pt():
     args.log_epoch()
 
 
-def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itrt_train, iters_train, model: DistributedDataParallel, optimizer):
+def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itrt_train, iters_train, model: DistributedDataParallel, optimizer, data_loader_val):
     model.train()
     me = misc.MetricLogger(delimiter='  ')
     me.add_meter('max_lr', misc.SmoothedValue(window_size=1, fmt='{value:.5f}'))
@@ -222,6 +241,30 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
         # ======================================================
     
     me.synchronize_between_processes()
+
+
+    #===================================VALIDATION=====================
+    if it % 100 == 0 and it > 0:
+        model.eval()
+        val_me = misc.MetricLogger(delimiter='  ')
+        header = f'[VAL] Epoch{ep}'
+
+        with torch.inference_mode():
+            for val_inp in val_me.log_every(len(data_loader_val), data_loader_val, 10, header):
+                val_inp = val_inp.to(args.device, non_blocking=True)
+                val_loss = model(val_inp, active_b1ff=None, vis=False)
+                val_me.update(last_val_loss=val_loss.item())
+        
+        val_me.synchronize_between_processes()
+        avg_val_loss = val_me.meters['last_val_loss'].global_avg
+        
+        if dist.is_master():
+            wandb.log({"epoch_val_loss": avg_val_loss, "epoch": ep})
+            print(f'  [*] [ep{ep}] Validation Recon Loss: {avg_val_loss:.4f}')
+    #===================================================================
+
+
+
     return {k: meter.global_avg for k, meter in me.meters.items()}
 
 

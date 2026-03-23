@@ -20,6 +20,10 @@ except:
     import PIL
     interpolation = PIL.Image.BICUBIC
 
+from sklearn.model_selection import train_test_split
+from torch.utils.data import Subset
+import copy
+
 
 def pil_loader(path):
     # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
@@ -104,15 +108,36 @@ def build_dataset_to_pretrain(dataset_path, input_size) -> Dataset:
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
+
+    trans_val = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
     
     dataset_path = os.path.abspath(dataset_path)
     for postfix in ('train', 'val'):
         if dataset_path.endswith(postfix):
             dataset_path = dataset_path[:-len(postfix)]
     
-    dataset_train = ISICDataset(imagenet_folder=dataset_path, transform=trans_train, train=True)
-    print_transform(trans_train, '[pre-train]')
-    return dataset_train
+    full_dataset = ISICDataset(imagenet_folder=dataset_path, train=False, transform=None)
+
+    indices = list(range(full_dataset))
+    train_indices, val_indices = train_test_split(
+        indices,
+        test_size = 5000,
+        random_state=42,
+        shuffle=True
+    )
+
+    train_ds = Subset(copy.deepcopy(full_dataset), train_indices)
+    train_ds.dataset.transform = trans_train
+
+    val_ds = Subset(copy.deepcopy(full_dataset), val_indices)
+    val_ds.dataset.transform = trans_val
+
+    print(f"[Dataset] Train size: {len(train_ds)}, Val size: {len(val_ds)}")
+    #print_transform(trans_train, '[pre-train]')
+    return train_ds, val_ds
 
 
 def print_transform(transform, s):

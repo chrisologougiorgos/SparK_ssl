@@ -32,7 +32,7 @@ for clz in (torch.nn.CrossEntropyLoss, SoftTargetCrossEntropy, drop.DropPath):
 
 
 pretrain_default_model_kwargs = {
-    'your_convnet_small': dict(drop_path_rate=0.05, pretrained=True),
+    'your_convnet_small': dict(drop_path_rate=0.05),
     'resnet50': dict(drop_path_rate=0.05),
     'resnet101': dict(drop_path_rate=0.08),
     'resnet152': dict(drop_path_rate=0.10),
@@ -42,7 +42,7 @@ pretrain_default_model_kwargs = {
     'convnext_large': dict(sparse=True, drop_path_rate=0.4),
 }
 for kw in pretrain_default_model_kwargs.values():
-    kw['pretrained'] = True
+    kw['pretrained'] = False
     kw['num_classes'] = 0
     kw['global_pool'] = ''
 

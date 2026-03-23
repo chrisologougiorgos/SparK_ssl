@@ -131,8 +131,8 @@ def init_dist_and_get_args():
     args.opt = args.opt.lower()
 
     #=====================Δικο μου==============================
-    #args.lr = args.base_lr * args.glb_batch_size / 256
-    args.lr = args.base_lr
+    args.lr = args.base_lr * args.glb_batch_size / 256
+    #args.lr = args.base_lr
     #===========================================================
 
     args.wde = args.wde or args.wd
