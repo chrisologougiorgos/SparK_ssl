@@ -137,7 +137,7 @@ def main_pt():
             if hasattr(itrt_train, 'set_epoch'):
                 itrt_train.set_epoch(ep)
             
-            stats = pre_train_one_ep(ep, args, tb_lg, itrt_train, iters_train, model, optimizer)
+            stats = pre_train_one_ep(ep, args, tb_lg, itrt_train, iters_train, model, optimizer, data_loader_val)
             last_loss = stats['last_loss']
             min_loss = min(min_loss, last_loss)
             performance_desc = f'{min_loss:.4f} {last_loss:.4f}'
