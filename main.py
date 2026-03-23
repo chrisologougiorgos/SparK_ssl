@@ -195,6 +195,8 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
         params_req_grad = [p for p in model.parameters() if p.requires_grad]
     
     for it, inp in enumerate(me.log_every(iters_train, itrt_train, 3, header)):
+        global_step = it + ep * iters_train
+
         # adjust lr and wd
         min_lr, max_lr, min_wd, max_wd = lr_wd_annealing(optimizer, args.lr, args.wd, args.wde, it + ep * iters_train, args.wp_ep * iters_train, args.ep * iters_train)
         
@@ -239,31 +241,29 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
                 "epoch": ep
             }, commit=True)
         # ======================================================
+
+        #===================================VALIDATION=====================
+        if it % 100 == 0 and it > 0:
+            model.eval()
+            val_me = misc.MetricLogger(delimiter='  ')
+            header = f'[VAL] Epoch{ep}'
+
+            with torch.inference_mode():
+                for val_inp in val_me.log_every(len(data_loader_val), data_loader_val, 10, header):
+                    val_inp = val_inp.to(args.device, non_blocking=True)
+                    val_loss = model(val_inp, active_b1ff=None, vis=False)
+                    val_me.update(last_val_loss=val_loss.item())
+            
+            val_me.synchronize_between_processes()
+            avg_val_loss = val_me.meters['last_val_loss'].global_avg
+            
+            if dist.is_master():
+                wandb.log({"val_loss_every_100": avg_val_loss, "global_step": global_step})
+                print(f'  [*] [Step {it}] Validation Loss: {avg_val_loss:.4f}')
+            model.train()
+        #===================================================================
     
     me.synchronize_between_processes()
-
-
-    #===================================VALIDATION=====================
-    if it % 100 == 0 and it > 0:
-        model.eval()
-        val_me = misc.MetricLogger(delimiter='  ')
-        header = f'[VAL] Epoch{ep}'
-
-        with torch.inference_mode():
-            for val_inp in val_me.log_every(len(data_loader_val), data_loader_val, 10, header):
-                val_inp = val_inp.to(args.device, non_blocking=True)
-                val_loss = model(val_inp, active_b1ff=None, vis=False)
-                val_me.update(last_val_loss=val_loss.item())
-        
-        val_me.synchronize_between_processes()
-        avg_val_loss = val_me.meters['last_val_loss'].global_avg
-        
-        if dist.is_master():
-            wandb.log({"epoch_val_loss": avg_val_loss, "epoch": ep})
-            print(f'  [*] [ep{ep}] Validation Recon Loss: {avg_val_loss:.4f}')
-    #===================================================================
-
-
 
     return {k: meter.global_avg for k, meter in me.meters.items()}
 
