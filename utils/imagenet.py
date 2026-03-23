@@ -121,7 +121,8 @@ def build_dataset_to_pretrain(dataset_path, input_size) -> Dataset:
     
     full_dataset = ISICDataset(imagenet_folder=dataset_path, train=True, transform=None)
 
-    indices = list(range(full_dataset))
+    indices = list(len(full_dataset))
+    print(f"LEN OF FULL DATASET: {len*full_dataset}")
     train_indices, val_indices = train_test_split(
         indices,
         test_size = 5000,
