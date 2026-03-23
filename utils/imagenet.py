@@ -119,7 +119,7 @@ def build_dataset_to_pretrain(dataset_path, input_size) -> Dataset:
         if dataset_path.endswith(postfix):
             dataset_path = dataset_path[:-len(postfix)]
     
-    full_dataset = ISICDataset(imagenet_folder=dataset_path, train=False, transform=None)
+    full_dataset = ISICDataset(imagenet_folder=dataset_path, train=True, transform=None)
 
     indices = list(range(full_dataset))
     train_indices, val_indices = train_test_split(
