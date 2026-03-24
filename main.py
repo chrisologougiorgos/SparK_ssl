@@ -131,18 +131,28 @@ def main_pt():
         print(f'[PT start] from ep{ep_start}')
         
         pt_start_time = time.time()
+        best_val_loss = 1e9 #ΔΙΚΟ ΜΟΥ
         for ep in range(ep_start, args.ep):
             ep_start_time = time.time()
             tb_lg.set_step(ep * iters_train)
             if hasattr(itrt_train, 'set_epoch'):
                 itrt_train.set_epoch(ep)
             
-            stats = pre_train_one_ep(ep, args, tb_lg, itrt_train, iters_train, model, optimizer, data_loader_val)
+            stats, last_val_loss = pre_train_one_ep(ep, args, tb_lg, itrt_train, iters_train, model, optimizer, data_loader_val)
             last_loss = stats['last_loss']
             min_loss = min(min_loss, last_loss)
             performance_desc = f'{min_loss:.4f} {last_loss:.4f}'
-            misc.save_checkpoint_with_meta_info_and_opt_state(f'{args.model}_withdecoder_1kpretrained_spark_style.pth', args, ep, performance_desc, model_without_ddp.state_dict(with_config=True), optimizer.state_dict())
-            misc.save_checkpoint_model_weights_only(f'{args.model}_1kpretrained_timm_style.pth', args, model_without_ddp.sparse_encoder.sp_cnn.state_dict())
+
+            #misc.save_checkpoint_with_meta_info_and_opt_state(f'{args.model}_withdecoder_1kpretrained_spark_style.pth', args, ep, performance_desc, model_without_ddp.state_dict(with_config=True), optimizer.state_dict())
+            #misc.save_checkpoint_model_weights_only(f'{args.model}_1kpretrained_timm_style.pth', args, model_without_ddp.sparse_encoder.sp_cnn.state_dict())
+            #================VALIDATION CHECKPOINT==================
+            if last_val_loss is not None and last_val_loss <= best_val_loss:
+               misc.save_checkpoint_with_meta_info_and_opt_state(f'{args.model}_withdecoder_1kpretrained_spark_style_epoch.pth', args, ep, performance_desc, model_without_ddp.state_dict(with_config=True), optimizer.state_dict()) 
+               misc.save_checkpoint_model_weights_only(f'{args.model}_1kpretrained_timm_style_epoch.pth', args, model_without_ddp.sparse_encoder.sp_cnn.state_dict())
+               print(f"========================SAVING MODEL==========================")
+               print(f"Epoch: {ep} | Val loss: {last_val_loss}")
+               best_val_loss = last_val_loss
+            #=======================================================
             
             ep_cost = round(time.time() - ep_start_time, 2) + 1    # +1s: approximate the following logging cost
             remain_secs = (args.ep-1 - ep) * ep_cost
@@ -242,30 +252,31 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
             }, commit=True)
         # ======================================================
 
-        #===================================VALIDATION=====================
-        if it % 800 == 0 :
-            model.eval()
-            val_me = misc.MetricLogger(delimiter='  ')
-            header = f'[VAL] Epoch{ep}'
+    #===================================VALIDATION=====================
+    avg_val_loss = None
+    if ep % 5 == 0 :
+        model.eval()
+        val_me = misc.MetricLogger(delimiter='  ')
+        header = f'[VAL] Epoch{ep}'
 
-            with torch.inference_mode():
-                for val_inp in val_me.log_every(len(data_loader_val), data_loader_val, 10, header):
-                    val_inp = val_inp.to(args.device, non_blocking=True)
-                    val_loss = model(val_inp, active_b1ff=None, vis=False)
-                    val_me.update(last_val_loss=val_loss.item())
-            
-            val_me.synchronize_between_processes()
-            avg_val_loss = val_me.meters['last_val_loss'].global_avg
-            
-            if dist.is_master():
-                wandb.log({"val_loss_every_100": avg_val_loss, "global_step": global_step})
-                print(f'  [*] [Step {it}] Validation Loss: {avg_val_loss:.4f}')
-            model.train()
-        #===================================================================
+        with torch.inference_mode():
+            for val_inp in val_me.log_every(len(data_loader_val), data_loader_val, 10, header):
+                val_inp = val_inp.to(args.device, non_blocking=True)
+                val_loss = model(val_inp, active_b1ff=None, vis=False)
+                val_me.update(last_val_loss=val_loss.item())
+        
+        val_me.synchronize_between_processes()
+        avg_val_loss = val_me.meters['last_val_loss'].global_avg
+        
+        if dist.is_master():
+            wandb.log({"val_loss_every_5_epochs": avg_val_loss, "global_step": global_step})
+            print(f'  [*] [Step {it}] Validation Loss: {avg_val_loss:.4f}')
+        model.train()
+    #===================================================================
     
     me.synchronize_between_processes()
 
-    return {k: meter.global_avg for k, meter in me.meters.items()}
+    return {k: meter.global_avg for k, meter in me.meters.items()}, avg_val_loss
 
 
 if __name__ == '__main__':
