@@ -138,7 +138,7 @@ def main_pt():
         pt_start_time = time.time()
         best_val_loss = 1e9 #ΔΙΚΟ ΜΟΥ
         ep_start = 1
-        for ep in range(ep_start, args.ep):
+        for ep in range(ep_start, args.ep+1):
             ep_start_time = time.time()
             tb_lg.set_step(ep * iters_train)
             if hasattr(itrt_train, 'set_epoch'):
