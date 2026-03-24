@@ -219,7 +219,7 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
         # forward and backward
         inp = inp.to(args.device, non_blocking=True)
         SparK.forward
-        with autocast():
+        with autocast(device_type='cuda'):
             loss = model(inp, active_b1ff=None, vis=False)
         optimizer.zero_grad()
         scaler.scale(loss).backward()
