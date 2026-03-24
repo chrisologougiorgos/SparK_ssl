@@ -137,6 +137,7 @@ def main_pt():
         
         pt_start_time = time.time()
         best_val_loss = 1e9 #ΔΙΚΟ ΜΟΥ
+        ep_start = 1
         for ep in range(ep_start, args.ep):
             ep_start_time = time.time()
             tb_lg.set_step(ep * iters_train)
@@ -261,7 +262,7 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
 
     #===================================VALIDATION=====================
     avg_val_loss = None
-    if ep % 5 == 0 :
+    if ep % 5 == 0 or ep==1:
         model.eval()
         val_me = misc.MetricLogger(delimiter='  ')
         header = f'[VAL] Epoch{ep}'
