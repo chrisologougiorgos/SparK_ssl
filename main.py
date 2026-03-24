@@ -27,6 +27,7 @@ from utils.lr_control import lr_wd_annealing, get_param_groups
 
 # ===================Δικά μου================
 import wandb
+from torch.amp import GradScaler, autocast
 # ===========================================
 
 
@@ -103,6 +104,10 @@ def main_pt():
     }[args.opt]
     optimizer = opt_clz(params=param_groups, lr=args.lr, weight_decay=0.0)
     print(f'[optimizer] optimizer({opt_clz}) ={optimizer}\n')
+
+    #==========================PRECISION===========================
+    scaler = GradScaler()
+    #==============================================================
     
     # try to resume the experiment from some checkpoint.pth; this will load model weights, optimizer states, and last epoch (ep_start)
     # if loaded, ep_start will be greater than 0
@@ -138,7 +143,7 @@ def main_pt():
             if hasattr(itrt_train, 'set_epoch'):
                 itrt_train.set_epoch(ep)
             
-            stats, last_val_loss = pre_train_one_ep(ep, args, tb_lg, itrt_train, iters_train, model, optimizer, data_loader_val)
+            stats, last_val_loss = pre_train_one_ep(ep, args, tb_lg, itrt_train, iters_train, model, optimizer, data_loader_val, scaler=scaler)
             last_loss = stats['last_loss']
             min_loss = min(min_loss, last_loss)
             performance_desc = f'{min_loss:.4f} {last_loss:.4f}'
@@ -192,7 +197,7 @@ def main_pt():
     args.log_epoch()
 
 
-def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itrt_train, iters_train, model: DistributedDataParallel, optimizer, data_loader_val):
+def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itrt_train, iters_train, model: DistributedDataParallel, optimizer, data_loader_val, scaler):
     model.train()
     me = misc.MetricLogger(delimiter='  ')
     me.add_meter('max_lr', misc.SmoothedValue(window_size=1, fmt='{value:.5f}'))
@@ -213,9 +218,10 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
         # forward and backward
         inp = inp.to(args.device, non_blocking=True)
         SparK.forward
-        loss = model(inp, active_b1ff=None, vis=False)
+        with autocast():
+            loss = model(inp, active_b1ff=None, vis=False)
         optimizer.zero_grad()
-        loss.backward()
+        scaler.scale(loss).backward()
         loss = loss.item()
         if not math.isfinite(loss):
             print(f'[rk{dist.get_rank():02d}] Loss is {loss}, stopping training!', force=True, flush=True)
@@ -224,9 +230,10 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
         # optimize
         grad_norm = None
         if early_clipping: grad_norm = torch.nn.utils.clip_grad_norm_(params_req_grad, args.clip).item()
-        optimizer.step()
+        scaler.step(optimizer)
         if late_clipping: grad_norm = optimizer.global_grad_norm
         torch.cuda.synchronize()
+        scaler.update
         
         # log
         me.update(last_loss=loss)
