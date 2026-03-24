@@ -234,7 +234,7 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
         scaler.step(optimizer)
         if late_clipping: grad_norm = optimizer.global_grad_norm
         torch.cuda.synchronize()
-        scaler.update
+        scaler.update()
         
         # log
         me.update(last_loss=loss)
