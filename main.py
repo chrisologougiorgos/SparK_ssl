@@ -212,6 +212,8 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
     
     #==============================Batch Accumulation================================
     num_of_accumulated_batches = round(4096 / args.bs)
+    remainder = iters_train % num_of_accumulated_batches
+    print(f"Remainder: {remainder}")
     #================================================================================
     
     for it, inp in enumerate(me.log_every(iters_train, itrt_train, 3, header)):
@@ -227,13 +229,12 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
             loss = model(inp, active_b1ff=None, vis=False)
 
         #==============================Batch Accumulation================================
-        remainder = iters_train % num_of_accumulated_batches
-        print(f"Remainder: {remainder}")
         is_last_cycle = (remainder > 0) and (it >= iters_train - remainder)
         current_accum_steps = remainder if is_last_cycle else num_of_accumulated_batches
-        print(f"Current_accum_steps: {current_accum_steps}")
+        if is_last_cycle:
+            print(f"Current_accum_steps: {current_accum_steps}")
         loss = loss / current_accum_steps
-        print(f"Normalized loss: {loss}")
+        #print(f"Normalized loss: {loss}")
 
         
         #optimizer.zero_grad()
