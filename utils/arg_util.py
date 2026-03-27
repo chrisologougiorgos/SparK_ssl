@@ -131,7 +131,8 @@ def init_dist_and_get_args():
     args.opt = args.opt.lower()
 
     #=====================Δικο μου==============================
-    args.lr = args.base_lr * args.glb_batch_size / 256
+    target_effective_batch_size = 4096
+    args.lr = args.base_lr * target_effective_batch_size / 256
     #args.lr = args.base_lr
     #===========================================================
 

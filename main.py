@@ -210,6 +210,10 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
     if early_clipping:
         params_req_grad = [p for p in model.parameters() if p.requires_grad]
     
+    #==============================Batch Accumulation================================
+    num_of_accumulated_batches = round(4096 / args.bs)
+    #================================================================================
+    
     for it, inp in enumerate(me.log_every(iters_train, itrt_train, 3, header)):
         global_step = it + ep * iters_train
 
@@ -221,20 +225,37 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
         SparK.forward
         with autocast(device_type='cuda'):
             loss = model(inp, active_b1ff=None, vis=False)
-        optimizer.zero_grad()
+
+        #==============================Batch Accumulation================================
+        remainder = iters_train % num_of_accumulated_batches
+        print(f"Remainder: {remainder}")
+        is_last_cycle = (remainder > 0) and (it >= iters_train - remainder)
+        current_accum_steps = remainder if is_last_cycle else num_of_accumulated_batches
+        print(f"Current_accum_steps: {current_accum_steps}")
+        loss = loss / current_accum_steps
+        print(f"Normalized loss: {loss}")
+
+        
+        #optimizer.zero_grad()
         scaler.scale(loss).backward()
-        loss = loss.item()
+        loss = loss.item() * current_accum_steps
         if not math.isfinite(loss):
             print(f'[rk{dist.get_rank():02d}] Loss is {loss}, stopping training!', force=True, flush=True)
             sys.exit(-1)
         
+        #==============================Batch Accumulation================================
+        is_update_step = ((it + 1) % num_of_accumulated_batches == 0) or (it + 1 == iters_train)
+
+        
         # optimize
         grad_norm = None
-        if early_clipping: grad_norm = torch.nn.utils.clip_grad_norm_(params_req_grad, args.clip).item()
-        scaler.step(optimizer)
-        if late_clipping: grad_norm = optimizer.global_grad_norm
-        torch.cuda.synchronize()
-        scaler.update()
+        if is_update_step:
+            if early_clipping: grad_norm = torch.nn.utils.clip_grad_norm_(params_req_grad, args.clip).item()
+            scaler.step(optimizer)
+            if late_clipping: grad_norm = optimizer.global_grad_norm
+            torch.cuda.synchronize()
+            scaler.update()
+            optimizer.zero_grad()
         
         # log
         me.update(last_loss=loss)
