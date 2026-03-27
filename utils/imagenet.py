@@ -101,7 +101,7 @@ def build_dataset_to_pretrain(dataset_path, input_size) -> Dataset:
 
     # Ίδια train transforms με το supervised pretraining
     trans_train = transforms.Compose([
-        #transforms.Resize((input_size, input_size), interpolation=interpolation),
+        transforms.Resize((input_size, input_size), interpolation=interpolation),
         transforms.RandomHorizontalFlip(p=0.5),
         transforms.RandomVerticalFlip(p=0.5),
         transforms.RandomRotation(degrees=180),
