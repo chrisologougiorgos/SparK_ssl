@@ -262,7 +262,7 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
 
     #===================================VALIDATION=====================
     avg_val_loss = None
-    if ep % 5 == 0 or ep==1:
+    if ep % 1 == 0 or ep==1:
         model.eval()
         val_me = misc.MetricLogger(delimiter='  ')
         header = f'[VAL] Epoch{ep}'
