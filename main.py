@@ -44,6 +44,8 @@ def main_pt():
     args: arg_util.Args = arg_util.init_dist_and_get_args()
     print(f'initial args:\n{str(args)}')
     args.log_epoch()
+
+    now = datetime.datetime.now().strftime("%Y%m%d_%H%M")
     
     # build data
     print(f'[build data for pre-training] ...\n')
@@ -133,11 +135,12 @@ def main_pt():
 
         tb_lg = misc.TensorboardLogger(args.tb_lg_dir, is_master=dist.is_master(), prefix='pt')
         min_loss = 1e9
+        ep_start = max(1, ep_start)
         print(f'[PT start] from ep{ep_start}')
         
         pt_start_time = time.time()
         best_val_loss = 1e9 #ΔΙΚΟ ΜΟΥ
-        ep_start = 1
+
         for ep in range(ep_start, args.ep+1):
             ep_start_time = time.time()
             tb_lg.set_step(ep * iters_train)
@@ -153,8 +156,8 @@ def main_pt():
             #misc.save_checkpoint_model_weights_only(f'{args.model}_1kpretrained_timm_style.pth', args, model_without_ddp.sparse_encoder.sp_cnn.state_dict())
             #================VALIDATION CHECKPOINT==================
             if last_val_loss is not None and last_val_loss <= best_val_loss:
-               misc.save_checkpoint_with_meta_info_and_opt_state(f'{args.model}_withdecoder_1kpretrained_spark_style_epoch.pth', args, ep, performance_desc, model_without_ddp.state_dict(with_config=True), optimizer.state_dict()) 
-               misc.save_checkpoint_model_weights_only(f'{args.model}_1kpretrained_timm_style_epoch.pth', args, model_without_ddp.sparse_encoder.sp_cnn.state_dict())
+               misc.save_checkpoint_with_meta_info_and_opt_state(f'{args.model}_{now}_withdecoder_1kpretrained_spark_style_epoch.pth', args, ep, performance_desc, model_without_ddp.state_dict(with_config=True), optimizer.state_dict()) 
+               misc.save_checkpoint_model_weights_only(f'{args.model}_{now}_1kpretrained_timm_style_epoch.pth', args, model_without_ddp.sparse_encoder.sp_cnn.state_dict())
                print(f"========================SAVING MODEL==========================")
                print(f"Epoch: {ep} | Val loss: {last_val_loss}")
                best_val_loss = last_val_loss
@@ -220,7 +223,7 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
         global_step = it + ep * iters_train
 
         # adjust lr and wd
-        min_lr, max_lr, min_wd, max_wd = lr_wd_annealing(optimizer, args.lr, args.wd, args.wde, it + ep * iters_train, args.wp_ep * iters_train, args.ep * iters_train)
+        min_lr, max_lr, min_wd, max_wd = lr_wd_annealing(optimizer, args.lr, args.wd, args.wde, it + (ep-1) * iters_train, args.wp_ep * iters_train, args.ep * iters_train)
         
         # forward and backward
         inp = inp.to(args.device, non_blocking=True)
