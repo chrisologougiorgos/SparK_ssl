@@ -135,7 +135,7 @@ def main_pt():
 
         tb_lg = misc.TensorboardLogger(args.tb_lg_dir, is_master=dist.is_master(), prefix='pt')
         min_loss = 1e9
-        ep_start = max(1, ep_start)
+        ep_start = 1
         print(f'[PT start] from ep{ep_start}')
         
         pt_start_time = time.time()
