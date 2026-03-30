@@ -302,7 +302,7 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
         avg_val_loss = val_me.meters['last_val_loss'].global_avg
         
         if dist.is_master():
-            wandb.log({"val_loss_every_5_epochs": avg_val_loss, "global_step": global_step})
+            wandb.log({"val_loss_every_epoch": avg_val_loss, "global_step": global_step})
             print(f'  [*] [Step {it}] Validation Loss: {avg_val_loss:.4f}')
         model.train()
     #===================================================================
