@@ -124,7 +124,7 @@ def main_pt():
                 project="spark-isic-ssl", 
                 name=args.exp_name,
                 config=vars(args),
-                tags = ["Kaggle"]
+                tags = ["Server", "224"]
             )
         # =====================================================================
 
