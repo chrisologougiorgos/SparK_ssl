@@ -254,7 +254,7 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
         # optimize
         grad_norm = None
         if is_update_step:
-            #scaler.unscale_(optimizer)
+            scaler.unscale_(optimizer)
             if early_clipping: grad_norm = torch.nn.utils.clip_grad_norm_(params_req_grad, args.clip).item()
             scaler.step(optimizer)
             if late_clipping: grad_norm = optimizer.global_grad_norm
