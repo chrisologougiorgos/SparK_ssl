@@ -35,7 +35,7 @@ class Args(Tap):
     
     # pre-training hyperparameters
     dp: float = 0.0
-    base_lr: float = 2e-5               #2e-4
+    base_lr: float = 2e-4
     wd: float = 0.04
     wde: float = 0.2
     ep: int = 1600
