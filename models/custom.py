@@ -78,38 +78,64 @@ class YourConvNet(nn.Module):
             x = self.backbone.fc(x)
             return x
 
+class YourTorchvisionConvNet(nn.Module):
+    def __init__(self, pretrained=True):
+        super().__init__()
+        weights = torchvision.models.ResNeXt50_32X4D_Weights.DEFAULT if pretrained else None
+        full_model = torchvision.models.resnext50_32x4d(weights=weights)
+        
+        self.conv1 = full_model.conv1
+        self.bn1 = full_model.bn1
+        self.relu = full_model.relu
+        self.maxpool = full_model.maxpool
+        
+        self.layer1 = full_model.layer1
+        self.layer2 = full_model.layer2
+        self.layer3 = full_model.layer3
+        self.layer4 = full_model.layer4
+        
+        self.global_pool = full_model.avgpool
+        self.fc = full_model.fc
 
+    def get_downsample_ratio(self) -> int:
+        return 32
+    
+    def get_feature_map_channels(self) -> List[int]:
+        return [256, 512, 1024, 2048]
+    
+    def forward(self, inp_bchw: torch.Tensor, hierarchical=False):
+        x = self.conv1(inp_bchw)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+        
+        if hierarchical:
+            ls = []
+            x = self.layer1(x); ls.append(x)
+            x = self.layer2(x); ls.append(x)
+            x = self.layer3(x); ls.append(x)
+            x = self.layer4(x); ls.append(x)
+            return ls
+        else:
+            x = self.layer1(x)
+            x = self.layer2(x)
+            x = self.layer3(x)
+            x = self.layer4(x)
+            
+            x = self.global_pool(x)
+            x = torch.flatten(x, 1)
+            x = self.fc(x)
+            return x
 
 @register_model
 def your_convnet_small(pretrained=True, **kwargs):
     #========== Αρχική Υλοποίηση===================
-    model = YourConvNet()
-    model.backbone = timm.create_model('resnext50_32x4d', pretrained=pretrained, **kwargs)
+    # model = YourConvNet()
+    # model.backbone = timm.create_model('resnext50_32x4d.a1_in1k', pretrained=pretrained, **kwargs)
     #==============================================
 
     #======== Υλοποίηση με torchvision για χρήση Imagenet pretrained weights=======
-    # weights = None
-    # if pretrained == True:
-    #     weights = torchvision.models.ResNeXt50_32X4D_Weights.DEFAULT
-    
-    # full_model = torchvision.models.resnext50_32x4d(weights=weights)
-    # encoder = nn.Sequential(
-    #     full_model.conv1,
-    #     full_model.bn1,
-    #     full_model.relu,
-    #     full_model.maxpool,
-    #     full_model.layer1,
-    #     full_model.layer2,
-    #     full_model.layer3,
-    #     full_model.layer4
-    # )
-    
-    # model = YourConvNet()
-    # model.backbone = encoder
-
-    # ΠΑΓΩΜΑ
-    # for param in model.backbone.parameters():
-    #     param.requires_grad = False
+    model = YourTorchvisionConvNet(pretrained=pretrained)
      
     return model
 
