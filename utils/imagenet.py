@@ -24,6 +24,12 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import Subset
 import copy
 
+# New imports for Albumentations addition
+import numpy as np
+from PIL import Image
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
+
 
 def pil_loader(path):
     # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
@@ -54,7 +60,7 @@ class ImageNetDataset(DatasetFolder):
     def __getitem__(self, index: int) -> Any:
         img_file_path = self.samples[index]
         return self.transform(self.loader(img_file_path))
-
+    
 
 
 #  Custom Κλάση για το ISIC DATASET
@@ -77,13 +83,29 @@ class ISICDataset(Dataset):
     def __len__(self):
         return len(self.samples)
 
+    # def __getitem__(self, index):
+    #     img_path = self.samples[index]
+        
+    #     img = pil_loader(img_path)
+    #     if self.transform is not None:
+    #         img = self.transform(img)
+    #     return img
+    
+    # New __getitem__ for Albumentations 
     def __getitem__(self, index):
         img_path = self.samples[index]
+        image = pil_loader(img_path)
         
-        img = pil_loader(img_path)
-        if self.transform is not None:
-            img = self.transform(img)
-        return img 
+        # ΜΕΤΑΤΡΟΠΗ ΣΕ NUMPY ΓΙΑ ΤΟ ALBUMENTATIONS
+        image = np.array(image) 
+        
+        if self.transform:
+            augmented = self.transform(image=image)
+            image = augmented['image']
+            
+        return image
+
+     
 
 
 
@@ -99,22 +121,63 @@ def build_dataset_to_pretrain(dataset_path, input_size) -> Dataset:
     :return: the dataset used for pretraining
     """
 
-    # Ίδια train transforms με το supervised pretraining
-    trans_train = transforms.Compose([
-        #transforms.Resize((input_size, input_size), interpolation=interpolation),
-        transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomVerticalFlip(p=0.5),
-        transforms.RandomRotation(degrees=180),
-        transforms.ColorJitter(brightness=0.10, contrast=0.10, saturation=0.05, hue=0.00),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    # # Ίδια train transforms με το supervised pretraining
+    # trans_train = transforms.Compose([
+    #     #transforms.Resize((input_size, input_size), interpolation=interpolation),
+    #     transforms.RandomHorizontalFlip(p=0.5),
+    #     transforms.RandomVerticalFlip(p=0.5),
+    #     transforms.RandomRotation(degrees=180),
+    #     transforms.ColorJitter(brightness=0.10, contrast=0.10, saturation=0.05, hue=0.00),
+    #     transforms.ToTensor(),
+    #     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    # ])
+
+    # trans_val = transforms.Compose([
+    #     #transforms.Resize((input_size, input_size), interpolation=interpolation),
+    #     transforms.ToTensor(),
+    #     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    # ])
+
+
+
+
+    # ============================New Albumentations transformations ============================
+    # FROM Kaggle Challenge 2020 1st place solution (excluding CUTOUT, blur, elastic transform)
+    trans_train = A.Compose([
+        A.Transpose(p=0.5),
+        A.VerticalFlip(p=0.5),
+        A.HorizontalFlip(p=0.5),
+        A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.75),
+        
+        # A.OneOf([
+        #     A.MotionBlur(blur_limit=5),
+        #     A.GaussianBlur(blur_limit=5),
+        #     A.GaussNoise(var_limit=(5.0, 30.0)),
+        # ], p=0.5),
+
+        A.OneOf([
+            A.OpticalDistortion(distort_limit=0.2),
+            A.GridDistortion(num_steps=5, distort_limit=0.2),
+        ], p=0.3),
+
+        A.CLAHE(clip_limit=2.0, p=0.7), 
+        A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=20, val_shift_limit=10, p=0.5),
+        A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=15, border_mode=0, p=0.85),
+        
+        #A.Resize(input_size, input_size),
+        
+        A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ToTensorV2()
     ])
 
-    trans_val = transforms.Compose([
-        #transforms.Resize((input_size, input_size), interpolation=interpolation),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    trans_val = A.Compose([
+        A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ToTensorV2()
     ])
+
+
+
+
     
     dataset_path = os.path.abspath(dataset_path)
     for postfix in ('train', 'val'):
