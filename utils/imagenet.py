@@ -32,7 +32,7 @@ from albumentations.pytorch import ToTensorV2
 
 
 def pil_loader(path):
-    # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
+
     with open(path, 'rb') as f: img: PImage.Image = PImage.open(f).convert('RGB')
     return img
 
@@ -203,6 +203,38 @@ def build_dataset_to_pretrain(dataset_path, input_size) -> Dataset:
 
     print(f"[Dataset] Train size: {len(train_ds)}, Val size: {len(val_ds)}")
     #print_transform(trans_train, '[pre-train]')
+
+
+
+
+
+
+    print("\n" + "="*30)
+    print("VALIDATION SET FILENAMES")
+    print("="*30)
+    
+    # Παίρνουμε τα paths από το original dataset χρησιμοποιώντας τα indices του validation
+    # Τα ταξινομούμε κιόλας για να είναι εύκολη η σύγκριση αν χρειαστεί
+    val_filenames = [full_dataset.samples[i] for i in val_indices]
+    
+    # Εκτύπωση των πρώτων 20 για γρήγορο έλεγχο
+    for path in val_filenames[:20]:
+        print(os.path.basename(path))
+        
+    print(f"... and {len(val_filenames) - 20} more.")
+    print("="*30 + "\n")
+    
+    # (Προαιρετικά) Αποθήκευση σε αρχείο για πλήρη σύγκριση
+    with open("val_set_debug.txt", "w") as f:
+        for path in val_filenames:
+            f.write(os.path.basename(path) + "\n")
+    print("[Debug] All validation filenames saved to val_set_debug.txt")
+
+
+
+
+
+    
     return train_ds, val_ds
 
 
