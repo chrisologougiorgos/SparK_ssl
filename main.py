@@ -108,7 +108,7 @@ def main_pt():
     print(f'[optimizer] optimizer({opt_clz}) ={optimizer}\n')
 
     #==========================PRECISION===========================
-    scaler = GradScaler()
+    scaler = GradScaler(enabled=False)
     #==============================================================
     
     # try to resume the experiment from some checkpoint.pth; this will load model weights, optimizer states, and last epoch (ep_start)
@@ -228,7 +228,7 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
         # forward and backward
         inp = inp.to(args.device, non_blocking=True)
         SparK.forward
-        with autocast(device_type='cuda'):
+        with autocast(device_type='cuda', enabled=False):
             loss = model(inp, active_b1ff=None, vis=False)
 
         #==============================Batch Accumulation================================
