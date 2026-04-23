@@ -155,10 +155,10 @@ def build_dataset_to_pretrain(dataset_path, input_size) -> Dataset:
         #     A.GaussNoise(var_limit=(5.0, 30.0)),
         # ], p=0.5),
 
-        A.OneOf([
-            A.OpticalDistortion(distort_limit=0.2),
-            A.GridDistortion(num_steps=5, distort_limit=0.2),
-        ], p=0.3),
+        # A.OneOf([
+        #     A.OpticalDistortion(distort_limit=0.2),
+        #     A.GridDistortion(num_steps=5, distort_limit=0.2),
+        # ], p=0.3),
 
         A.CLAHE(clip_limit=2.0, p=0.7), 
         A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=20, val_shift_limit=10, p=0.5),
