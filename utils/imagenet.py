@@ -63,7 +63,50 @@ class ImageNetDataset(DatasetFolder):
     
 
 
-#  Custom Κλάση για το ISIC DATASET
+# #  Custom Κλάση για το ISIC DATASET - ALBUMENTATIONS
+# class ISICDataset(Dataset):
+#     def __init__(self, imagenet_folder, train, transform):
+    
+#         self.folder = os.path.join(imagenet_folder, 'train' if train else 'val')
+#         self.transform = transform
+        
+        
+#         self.samples = [
+#             os.path.join(self.folder, f) 
+#             for f in os.listdir(self.folder) 
+#             if f.lower().endswith(('.png', '.jpg', '.jpeg'))
+#         ]
+        
+#         if len(self.samples) == 0:
+#             raise RuntimeError(f"Found 0 images in {self.folder}. Check your paths!")
+
+#     def __len__(self):
+#         return len(self.samples)
+
+#     # def __getitem__(self, index):
+#     #     img_path = self.samples[index]
+        
+#     #     img = pil_loader(img_path)
+#     #     if self.transform is not None:
+#     #         img = self.transform(img)
+#     #     return img
+    
+#     # New __getitem__ for Albumentations 
+#     def __getitem__(self, index):
+#         img_path = self.samples[index]
+#         image = pil_loader(img_path)
+        
+#         # ΜΕΤΑΤΡΟΠΗ ΣΕ NUMPY ΓΙΑ ΤΟ ALBUMENTATIONS
+#         image = np.array(image) 
+        
+#         if self.transform:
+#             augmented = self.transform(image=image)
+#             image = augmented['image']
+            
+#         return image
+
+
+#  Custom Κλάση για το ISIC DATASET - TORCHVISION
 class ISICDataset(Dataset):
     def __init__(self, imagenet_folder, train, transform):
     
@@ -83,27 +126,13 @@ class ISICDataset(Dataset):
     def __len__(self):
         return len(self.samples)
 
-    # def __getitem__(self, index):
-    #     img_path = self.samples[index]
-        
-    #     img = pil_loader(img_path)
-    #     if self.transform is not None:
-    #         img = self.transform(img)
-    #     return img
-    
-    # New __getitem__ for Albumentations 
     def __getitem__(self, index):
         img_path = self.samples[index]
-        image = pil_loader(img_path)
         
-        # ΜΕΤΑΤΡΟΠΗ ΣΕ NUMPY ΓΙΑ ΤΟ ALBUMENTATIONS
-        image = np.array(image) 
-        
-        if self.transform:
-            augmented = self.transform(image=image)
-            image = augmented['image']
-            
-        return image
+        img = pil_loader(img_path)
+        if self.transform is not None:
+            img = self.transform(img)
+        return img 
 
      
 
