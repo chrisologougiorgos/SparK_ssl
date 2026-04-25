@@ -63,50 +63,7 @@ class ImageNetDataset(DatasetFolder):
     
 
 
-#  Custom Κλάση για το ISIC DATASET - ALBUMENTATIONS
-class ISICDataset(Dataset):
-    def __init__(self, imagenet_folder, train, transform):
-    
-        self.folder = os.path.join(imagenet_folder, 'train' if train else 'val')
-        self.transform = transform
-        
-        
-        self.samples = [
-            os.path.join(self.folder, f) 
-            for f in os.listdir(self.folder) 
-            if f.lower().endswith(('.png', '.jpg', '.jpeg'))
-        ]
-        
-        if len(self.samples) == 0:
-            raise RuntimeError(f"Found 0 images in {self.folder}. Check your paths!")
-
-    def __len__(self):
-        return len(self.samples)
-
-    # def __getitem__(self, index):
-    #     img_path = self.samples[index]
-        
-    #     img = pil_loader(img_path)
-    #     if self.transform is not None:
-    #         img = self.transform(img)
-    #     return img
-    
-    # New __getitem__ for Albumentations 
-    def __getitem__(self, index):
-        img_path = self.samples[index]
-        image = pil_loader(img_path)
-        
-        # ΜΕΤΑΤΡΟΠΗ ΣΕ NUMPY ΓΙΑ ΤΟ ALBUMENTATIONS
-        image = np.array(image) 
-        
-        if self.transform:
-            augmented = self.transform(image=image)
-            image = augmented['image']
-            
-        return image
-
-
-# #  Custom Κλάση για το ISIC DATASET - TORCHVISION
+# #  Custom Κλάση για το ISIC DATASET - ALBUMENTATIONS
 # class ISICDataset(Dataset):
 #     def __init__(self, imagenet_folder, train, transform):
     
@@ -126,13 +83,56 @@ class ISICDataset(Dataset):
 #     def __len__(self):
 #         return len(self.samples)
 
+#     # def __getitem__(self, index):
+#     #     img_path = self.samples[index]
+        
+#     #     img = pil_loader(img_path)
+#     #     if self.transform is not None:
+#     #         img = self.transform(img)
+#     #     return img
+    
+#     # New __getitem__ for Albumentations 
 #     def __getitem__(self, index):
 #         img_path = self.samples[index]
+#         image = pil_loader(img_path)
         
-#         img = pil_loader(img_path)
-#         if self.transform is not None:
-#             img = self.transform(img)
-#         return img 
+#         # ΜΕΤΑΤΡΟΠΗ ΣΕ NUMPY ΓΙΑ ΤΟ ALBUMENTATIONS
+#         image = np.array(image) 
+        
+#         if self.transform:
+#             augmented = self.transform(image=image)
+#             image = augmented['image']
+            
+#         return image
+
+
+#  Custom Κλάση για το ISIC DATASET - TORCHVISION
+class ISICDataset(Dataset):
+    def __init__(self, imagenet_folder, train, transform):
+    
+        self.folder = os.path.join(imagenet_folder, 'train' if train else 'val')
+        self.transform = transform
+        
+        
+        self.samples = [
+            os.path.join(self.folder, f) 
+            for f in os.listdir(self.folder) 
+            if f.lower().endswith(('.png', '.jpg', '.jpeg'))
+        ]
+        
+        if len(self.samples) == 0:
+            raise RuntimeError(f"Found 0 images in {self.folder}. Check your paths!")
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, index):
+        img_path = self.samples[index]
+        
+        img = pil_loader(img_path)
+        if self.transform is not None:
+            img = self.transform(img)
+        return img 
 
      
 
@@ -170,53 +170,53 @@ def build_dataset_to_pretrain(dataset_path, input_size) -> Dataset:
 
 
 
-    # ============================New Albumentations transformations ============================
-    # FROM Kaggle Challenge 2020 1st place solution (excluding CUTOUT, blur, elastic transform)
-    trans_train = A.Compose([
-        A.Transpose(p=0.5),
-        A.VerticalFlip(p=0.5),
-        A.HorizontalFlip(p=0.5),
-        A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.75),
+    # # ============================New Albumentations transformations ============================
+    # # FROM Kaggle Challenge 2020 1st place solution (excluding CUTOUT, blur, elastic transform)
+    # trans_train = A.Compose([
+    #     A.Transpose(p=0.5),
+    #     A.VerticalFlip(p=0.5),
+    #     A.HorizontalFlip(p=0.5),
+    #     A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.75),
         
-        # A.OneOf([
-        #     A.MotionBlur(blur_limit=5),
-        #     A.GaussianBlur(blur_limit=5),
-        #     A.GaussNoise(var_limit=(5.0, 30.0)),
-        # ], p=0.5),
+    #     # A.OneOf([
+    #     #     A.MotionBlur(blur_limit=5),
+    #     #     A.GaussianBlur(blur_limit=5),
+    #     #     A.GaussNoise(var_limit=(5.0, 30.0)),
+    #     # ], p=0.5),
 
-        # A.OneOf([
-        #     A.OpticalDistortion(distort_limit=0.2),
-        #     A.GridDistortion(num_steps=5, distort_limit=0.2),
-        # ], p=0.3),
+    #     # A.OneOf([
+    #     #     A.OpticalDistortion(distort_limit=0.2),
+    #     #     A.GridDistortion(num_steps=5, distort_limit=0.2),
+    #     # ], p=0.3),
 
-        A.CLAHE(clip_limit=2.0, p=0.7), 
-        A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=20, val_shift_limit=10, p=0.5),
-        A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=15, border_mode=0, p=0.85),
+    #     A.CLAHE(clip_limit=2.0, p=0.7), 
+    #     A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=20, val_shift_limit=10, p=0.5),
+    #     A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=15, border_mode=0, p=0.85),
         
-        #A.Resize(input_size, input_size),
+    #     #A.Resize(input_size, input_size),
         
-        A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ToTensorV2()
-    ])
-
-    trans_val = A.Compose([
-        A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ToTensorV2()
-    ])
-
-
-    # # Ιδια με το SparK github
-    # trans_train = transforms.Compose([
-    #     transforms.RandomResizedCrop(input_size, scale=(0.67, 1.0), interpolation=interpolation),
-    #     transforms.RandomHorizontalFlip(),
-    #     transforms.ToTensor(),
-    #     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    #     A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    #     ToTensorV2()
     # ])
 
-    # trans_val = transforms.Compose([
-    #     transforms.ToTensor(),
-    #     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    # trans_val = A.Compose([
+    #     A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    #     ToTensorV2()
     # ])
+
+
+    # Ιδια με το SparK github
+    trans_train = transforms.Compose([
+        transforms.RandomResizedCrop(input_size, scale=(0.67, 1.0), interpolation=interpolation),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+
+    trans_val = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
 
 
 
