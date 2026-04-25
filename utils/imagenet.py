@@ -141,40 +141,53 @@ def build_dataset_to_pretrain(dataset_path, input_size) -> Dataset:
 
 
 
-    # ============================New Albumentations transformations ============================
-    # FROM Kaggle Challenge 2020 1st place solution (excluding CUTOUT, blur, elastic transform)
-    trans_train = A.Compose([
-        A.Transpose(p=0.5),
-        A.VerticalFlip(p=0.5),
-        A.HorizontalFlip(p=0.5),
-        A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.75),
+    # # ============================New Albumentations transformations ============================
+    # # FROM Kaggle Challenge 2020 1st place solution (excluding CUTOUT, blur, elastic transform)
+    # trans_train = A.Compose([
+    #     A.Transpose(p=0.5),
+    #     A.VerticalFlip(p=0.5),
+    #     A.HorizontalFlip(p=0.5),
+    #     A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.75),
         
-        # A.OneOf([
-        #     A.MotionBlur(blur_limit=5),
-        #     A.GaussianBlur(blur_limit=5),
-        #     A.GaussNoise(var_limit=(5.0, 30.0)),
-        # ], p=0.5),
+    #     # A.OneOf([
+    #     #     A.MotionBlur(blur_limit=5),
+    #     #     A.GaussianBlur(blur_limit=5),
+    #     #     A.GaussNoise(var_limit=(5.0, 30.0)),
+    #     # ], p=0.5),
 
-        # A.OneOf([
-        #     A.OpticalDistortion(distort_limit=0.2),
-        #     A.GridDistortion(num_steps=5, distort_limit=0.2),
-        # ], p=0.3),
+    #     # A.OneOf([
+    #     #     A.OpticalDistortion(distort_limit=0.2),
+    #     #     A.GridDistortion(num_steps=5, distort_limit=0.2),
+    #     # ], p=0.3),
 
-        A.CLAHE(clip_limit=2.0, p=0.7), 
-        A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=20, val_shift_limit=10, p=0.5),
-        A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=15, border_mode=0, p=0.85),
+    #     A.CLAHE(clip_limit=2.0, p=0.7), 
+    #     A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=20, val_shift_limit=10, p=0.5),
+    #     A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=15, border_mode=0, p=0.85),
         
-        #A.Resize(input_size, input_size),
+    #     #A.Resize(input_size, input_size),
         
-        A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ToTensorV2()
+    #     A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    #     ToTensorV2()
+    # ])
+
+    # trans_val = A.Compose([
+    #     A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    #     ToTensorV2()
+    # ])
+
+
+    # Ιδια με το SparK github
+    trans_train = transforms.Compose([
+        transforms.RandomResizedCrop(input_size, scale=(0.67, 1.0), interpolation=interpolation),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
-    trans_val = A.Compose([
-        A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ToTensorV2()
+    trans_val = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
-
 
 
 
