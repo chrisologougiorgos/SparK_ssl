@@ -214,7 +214,7 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
         params_req_grad = [p for p in model.parameters() if p.requires_grad]
     
     #==============================Batch Accumulation================================
-    num_of_accumulated_batches = round(1024 / args.bs)
+    num_of_accumulated_batches = round(256 / args.bs)
     remainder = iters_train % num_of_accumulated_batches
     print(f"Remainder: {remainder}")
     #================================================================================
