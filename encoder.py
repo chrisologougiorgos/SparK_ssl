@@ -91,7 +91,10 @@ class SparseConvNeXtLayerNorm(nn.LayerNorm):
                     nc = super(SparseConvNeXtLayerNorm, self).forward(nc)
                 
                     x = torch.zeros_like(bhwc)
-                    x[ii] = nc
+                    #x[ii] = nc
+                    #===============ΜΙΝΕ==================
+                    x[ii].to(x.dtype)
+                    #=====================================
                     return x.permute(0, 3, 1, 2)
                 else:
                     u = x.mean(1, keepdim=True)
