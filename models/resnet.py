@@ -12,7 +12,7 @@ from timm.models.resnet import ResNet
 
 # hack: inject the `get_downsample_ratio` function into `timm.models.resnet.ResNet`
 def get_downsample_ratio(self: ResNet) -> int:
-    return 32
+    return 16
 
 
 # hack: inject the `get_feature_map_channels` function into `timm.models.resnet.ResNet`
