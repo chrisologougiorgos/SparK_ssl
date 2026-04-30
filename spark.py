@@ -15,6 +15,8 @@ from timm.models.layers import trunc_normal_
 import encoder
 from decoder import LightDecoder
 
+import torch.nn.functional as F
+
 
 class SparK(nn.Module):
     def __init__(
@@ -103,7 +105,20 @@ class SparK(nn.Module):
             if bcff is not None:
                 bcff = self.densify_norms[i](bcff)
                 mask_tokens = self.mask_tokens[i].expand_as(bcff)
-                bcff = torch.where(cur_active.expand_as(bcff), bcff, mask_tokens)   # fill in empty (non-active) positions with [mask] tokens
+                #bcff = torch.where(cur_active.expand_as(bcff), bcff, mask_tokens)   # fill in empty (non-active) positions with [mask] tokens
+                
+                #====================ΜΙΝΕ========================
+                # spark.py - Αντικατάσταση της γραμμής που προκαλεί το RuntimeError
+                if cur_active.shape[-2:] != bcff.shape[-2:]:
+                    # Προσαρμογή μεγέθους της μάσκας για να ταιριάξει στο feature map
+                    cur_active_rescaled = F.interpolate(cur_active.float(), size=bcff.shape[-2:], mode='nearest').bool()
+                else:
+                    cur_active_rescaled = cur_active
+
+                bcff = torch.where(cur_active_rescaled.expand_as(bcff), bcff, mask_tokens)
+                #==================================================
+                
+                
                 bcff: torch.Tensor = self.densify_projs[i](bcff)
             to_dec.append(bcff)
             cur_active = cur_active.repeat_interleave(2, dim=2).repeat_interleave(2, dim=3)  # dilate the mask map, from (B, 1, f, f) to (B, 1, H, W)
