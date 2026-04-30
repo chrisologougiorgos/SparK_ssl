@@ -13,8 +13,6 @@ from timm.models.layers import trunc_normal_
 
 from utils.misc import is_pow2n
 
-import torch.nn.functional as F
-
 
 class UNetBlock(nn.Module):
     def __init__(self, cin, cout, bn2d):
@@ -50,26 +48,7 @@ class LightDecoder(nn.Module):
         x = 0
         for i, d in enumerate(self.dec):
             if i < len(to_dec) and to_dec[i] is not None:
-                #x = x + to_dec[i]
-
-
-                #=============MINE===============
-                # decoder.py γύρω στη γραμμή 51
-                skip_connection = to_dec[i]
-
-                if not isinstance(skip_connection, int): 
-                    # 2. Αφού βεβαιωθούμε ότι ΔΕΝ είναι int (άρα είναι Tensor), ελέγχουμε τις διαστάσεις
-                    if x.shape[-2:] != skip_connection.shape[-2:]:
-                        # Αν τα μεγέθη διαφέρουν (π.χ. 28x28 vs 14x14 λόγω του Ratio 16), ευθυγραμμίζουμε
-                        x = F.interpolate(x, size=skip_connection.shape[-2:], mode='bilinear', align_corners=False)
-                    
-                    # 3. Κάνουμε την πρόσθεση
-                    x = x + skip_connection
-                else:
-                    # 4. Αν είναι 0 (int), απλά συνεχίζουμε χωρίς πρόσθεση
-                    pass
-
-
+                x = x + to_dec[i]
             x = self.dec[i](x)
         return self.proj(x)
     
