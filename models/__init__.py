@@ -53,6 +53,14 @@ def build_sparse_encoder(name: str, input_size: int, sbn=False, drop_path_rate=0
     kwargs = pretrain_default_model_kwargs[name]
     if drop_path_rate != 0:
         kwargs['drop_path_rate'] = drop_path_rate
+    
+    #=======MINE=======
+    if 'resnet' in name:
+        kwargs['output_stride'] = 16
+        print(f"--- Configured {name} with output_stride=16 ---")
+    #==================
+
+
     print(f'[build_sparse_encoder] model kwargs={kwargs}')
     cnn = create_model(name, **kwargs)
     
