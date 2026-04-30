@@ -26,24 +26,6 @@ def forward(self, x, hierarchical=False):
     """ this forward function is a modified version of `timm.models.resnet.ResNet.forward`
     >>> ResNet.forward
     """
-
-
-    # <--- ΑΛΛΑΓΗ 2: Hack για να κάνουμε το stride του layer4 = 1
-    # Ελέγχουμε αν το πρώτο convolution του layer4 έχει stride 2
-    if self.layer4[0].conv2.stride == (2, 2):
-        # Αλλάζουμε όλα τα strides του layer4 σε 1 (ώστε να μην μικρύνει η εικόνα)
-        for m in self.layer4.modules():
-            if isinstance(m, torch.nn.Conv2d) and m.stride == (2, 2):
-                m.stride = (1, 1)
-        # Αν υπάρχει shortcut (downsample path), το διορθώνουμε και αυτό
-        if hasattr(self.layer4[0], 'downsample') and self.layer4[0].downsample is not None:
-            for m in self.layer4[0].downsample.modules():
-                if isinstance(m, torch.nn.Conv2d) and m.stride == (2, 2):
-                    m.stride = (1, 1)
-    # -------------------------------------------------------->
-
-
-
     x = self.conv1(x)
     x = self.bn1(x)
     x = self.act1(x)

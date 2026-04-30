@@ -8,13 +8,24 @@ import torch
 import torch.nn as nn
 from timm.models.layers import DropPath
 
+import torch.nn.functional as F
+
 
 _cur_active: torch.Tensor = None            # B1ff
-# todo: try to use `gather` for speed?
+# # todo: try to use `gather` for speed?
+# def _get_active_ex_or_ii(H, W, returning_active_ex=True):
+#     h_repeat, w_repeat = H // _cur_active.shape[-2], W // _cur_active.shape[-1]
+#     active_ex = _cur_active.repeat_interleave(h_repeat, dim=2).repeat_interleave(w_repeat, dim=3)
+#     return active_ex if returning_active_ex else active_ex.squeeze(1).nonzero(as_tuple=True)  # ii: bi, hi, wi
 def _get_active_ex_or_ii(H, W, returning_active_ex=True):
-    h_repeat, w_repeat = H // _cur_active.shape[-2], W // _cur_active.shape[-1]
-    active_ex = _cur_active.repeat_interleave(h_repeat, dim=2).repeat_interleave(w_repeat, dim=3)
-    return active_ex if returning_active_ex else active_ex.squeeze(1).nonzero(as_tuple=True)  # ii: bi, hi, wi
+    global _cur_active
+    # Αν η μάσκα δεν ταιριάζει με το feature map (π.χ. 14x14 vs 14x14)
+    if _cur_active.shape[-2] != H or _cur_active.shape[-1] != W:
+        # Προσαρμόζουμε τη μάσκα δυναμικά στο μέγεθος του layer
+        active_ex = F.interpolate(_cur_active.float(), size=(H, W), mode='nearest').bool()
+    else:
+        active_ex = _cur_active
+    return active_ex if returning_active_ex else active_ex.squeeze(1).nonzero(as_tuple=True)
 
 
 def sp_conv_forward(self, x: torch.Tensor):
