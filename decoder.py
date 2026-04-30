@@ -55,16 +55,19 @@ class LightDecoder(nn.Module):
 
                 #=============MINE===============
                 # decoder.py γύρω στη γραμμή 51
-                if isinstance(to_dec[i], torch.Tensor):
-                    if x.shape[-2:] != to_dec[i].shape[-2:]:
-                        # Αν τα μεγέθη διαφέρουν (π.χ. 28x28 vs 14x14), ευθυγραμμίζουμε τον decoder
-                        x = F.interpolate(x, size=to_dec[i].shape[-2:], mode='bilinear', align_corners=False)
+                skip_connection = to_dec[i]
+
+                if not isinstance(skip_connection, int): 
+                    # 2. Αφού βεβαιωθούμε ότι ΔΕΝ είναι int (άρα είναι Tensor), ελέγχουμε τις διαστάσεις
+                    if x.shape[-2:] != skip_connection.shape[-2:]:
+                        # Αν τα μεγέθη διαφέρουν (π.χ. 28x28 vs 14x14 λόγω του Ratio 16), ευθυγραμμίζουμε
+                        x = F.interpolate(x, size=skip_connection.shape[-2:], mode='bilinear', align_corners=False)
                     
-                    x = x + to_dec[i]
+                    # 3. Κάνουμε την πρόσθεση
+                    x = x + skip_connection
                 else:
-                    # Αν είναι 0, απλά συνεχίζουμε χωρίς πρόσθεση
-                    x = x   
-                #================================
+                    # 4. Αν είναι 0 (int), απλά συνεχίζουμε χωρίς πρόσθεση
+                    pass
 
 
             x = self.dec[i](x)
