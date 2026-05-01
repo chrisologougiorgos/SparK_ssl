@@ -152,6 +152,16 @@ def main_pt():
             min_loss = min(min_loss, last_loss)
             performance_desc = f'{min_loss:.4f} {last_loss:.4f}'
 
+
+            #================Avg training loss per epoch to wandb=======================
+            current_global_step = ep * iters_train
+            if dist.is_master():
+                wandb.log({
+                    "train_loss_every_epoch": last_loss
+                }, step=current_global_step)
+            #===========================================================================
+
+
             #misc.save_checkpoint_with_meta_info_and_opt_state(f'{args.model}_withdecoder_1kpretrained_spark_style.pth', args, ep, performance_desc, model_without_ddp.state_dict(with_config=True), optimizer.state_dict())
             #misc.save_checkpoint_model_weights_only(f'{args.model}_1kpretrained_timm_style.pth', args, model_without_ddp.sparse_encoder.sp_cnn.state_dict())
             #================VALIDATION CHECKPOINT==================
