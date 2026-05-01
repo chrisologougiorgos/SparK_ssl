@@ -158,7 +158,7 @@ def main_pt():
             if dist.is_master():
                 wandb.log({
                     "train_loss_every_epoch": last_loss
-                }, step=current_global_step)
+                })
             #===========================================================================
 
 
