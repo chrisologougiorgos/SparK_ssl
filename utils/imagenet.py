@@ -232,7 +232,7 @@ def build_dataset_to_pretrain(dataset_path, input_size) -> Dataset:
     print(f"LEN OF FULL DATASET: {len(full_dataset)}")
     train_indices, val_indices = train_test_split(
         indices,
-        test_size = 5000,
+        test_size = 500,
         random_state=42,
         shuffle=True
     )
