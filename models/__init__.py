@@ -42,7 +42,7 @@ pretrain_default_model_kwargs = {
     'convnext_large': dict(sparse=True, drop_path_rate=0.4),
 }
 for kw in pretrain_default_model_kwargs.values():
-    kw['pretrained'] = True
+    kw['pretrained'] = False
     kw['num_classes'] = 0
     kw['global_pool'] = ''
 
