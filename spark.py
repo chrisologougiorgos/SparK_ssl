@@ -114,8 +114,9 @@ class SparK(nn.Module):
         mean = inp.mean(dim=-1, keepdim=True)
         var = (inp.var(dim=-1, keepdim=True) + 1e-6) ** .5
         inp = (inp - mean) / var
-        l2_loss = ((rec - inp) ** 2).mean(dim=2, keepdim=False)    # (B, L, C) ==mean==> (B, L)
-        
+        #l2_loss = ((rec - inp) ** 2).mean(dim=2, keepdim=False)    # (B, L, C) ==mean==> (B, L)
+        l2_loss = (rec - inp).abs().mean(dim=2, keepdim=False) #L1 LOSS!!!!!!! MINE
+
         non_active = active_b1ff.logical_not().int().view(active_b1ff.shape[0], -1)  # (B, 1, f, f) => (B, L)
         recon_loss = l2_loss.mul_(non_active).sum() / (non_active.sum() + 1e-8)  # loss only on masked (non-active) patches
         
