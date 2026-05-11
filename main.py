@@ -165,18 +165,18 @@ def main_pt():
             #misc.save_checkpoint_with_meta_info_and_opt_state(f'{args.model}_withdecoder_1kpretrained_spark_style.pth', args, ep, performance_desc, model_without_ddp.state_dict(with_config=True), optimizer.state_dict())
             #misc.save_checkpoint_model_weights_only(f'{args.model}_1kpretrained_timm_style.pth', args, model_without_ddp.sparse_encoder.sp_cnn.state_dict())
             #================VALIDATION CHECKPOINT==================
-            if last_val_loss is not None and last_val_loss <= best_val_loss:
-               misc.save_checkpoint_with_meta_info_and_opt_state(f'{args.model}_{now}_withdecoder_1kpretrained_spark_style_epoch.pth', args, ep, performance_desc, model_without_ddp.state_dict(with_config=True), optimizer.state_dict()) 
-               misc.save_checkpoint_model_weights_only(f'{args.model}_{now}_1kpretrained_timm_style_epoch.pth', args, model_without_ddp.sparse_encoder.sp_cnn.state_dict())
-               print(f"========================SAVING MODEL==========================")
-               print(f"Epoch: {ep} | Val loss: {last_val_loss}")
-               best_val_loss = last_val_loss
+            # if last_val_loss is not None and last_val_loss <= best_val_loss:
+            #    misc.save_checkpoint_with_meta_info_and_opt_state(f'{args.model}_{now}_withdecoder_1kpretrained_spark_style_epoch.pth', args, ep, performance_desc, model_without_ddp.state_dict(with_config=True), optimizer.state_dict()) 
+            #    misc.save_checkpoint_model_weights_only(f'{args.model}_{now}_1kpretrained_timm_style_epoch.pth', args, model_without_ddp.sparse_encoder.sp_cnn.state_dict())
+            #    print(f"========================SAVING MODEL==========================")
+            #    print(f"Epoch: {ep} | Val loss: {last_val_loss}")
+            #    best_val_loss = last_val_loss
             #=======================================================
             
             #==============SAVING EVERY N EPOCHS ==========================
             N = 100
             if ep % N == 0:
-               #misc.save_checkpoint_with_meta_info_and_opt_state(f'{args.model}_{now}_withdecoder_1kpretrained_spark_style_epoch.pth', args, ep, performance_desc, model_without_ddp.state_dict(with_config=True), optimizer.state_dict()) 
+               misc.save_checkpoint_with_meta_info_and_opt_state(f'{args.model}_{now}_withdecoder_1kpretrained_spark_style_epoch_{ep}.pth', args, ep, performance_desc, model_without_ddp.state_dict(with_config=True), optimizer.state_dict()) 
                misc.save_checkpoint_model_weights_only(f'{args.model}_{now}_1kpretrained_timm_style_epoch_{ep}.pth', args, model_without_ddp.sparse_encoder.sp_cnn.state_dict())
                print(f"========================SAVING MODEL for epoch {ep}==========================")
                print(f"Epoch: {ep} | Train loss: {last_loss}")
@@ -306,31 +306,31 @@ def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itr
         # ======================================================
 
     #===================================VALIDATION=====================
-    avg_val_loss = None
-    if ep % 1 == 0 or ep==1:
-        model.eval()
-        val_me = misc.MetricLogger(delimiter='  ')
-        header = f'[VAL] Epoch{ep}'
+    # avg_val_loss = None
+    # if ep % 1 == 0 or ep==1:
+    #     model.eval()
+    #     val_me = misc.MetricLogger(delimiter='  ')
+    #     header = f'[VAL] Epoch{ep}'
 
-        with torch.inference_mode():
-            for val_inp in val_me.log_every(len(data_loader_val), data_loader_val, 10, header):
-                val_inp = val_inp.to(args.device, non_blocking=True)
-                val_loss = model(val_inp, active_b1ff=None, vis=False)
-                val_me.update(last_val_loss=val_loss.item())
+    #     with torch.inference_mode():
+    #         for val_inp in val_me.log_every(len(data_loader_val), data_loader_val, 10, header):
+    #             val_inp = val_inp.to(args.device, non_blocking=True)
+    #             val_loss = model(val_inp, active_b1ff=None, vis=False)
+    #             val_me.update(last_val_loss=val_loss.item())
         
-        val_me.synchronize_between_processes()
-        avg_val_loss = val_me.meters['last_val_loss'].global_avg
+    #     val_me.synchronize_between_processes()
+    #     avg_val_loss = val_me.meters['last_val_loss'].global_avg
         
-        if dist.is_master():
-            wandb.log({"val_loss_every_epoch": avg_val_loss, "global_step": global_step})
-            print(f'  [*] [Step {it}] Validation Loss: {avg_val_loss:.4f}')
+    #     if dist.is_master():
+    #         wandb.log({"val_loss_every_epoch": avg_val_loss, "global_step": global_step})
+    #         print(f'  [*] [Step {it}] Validation Loss: {avg_val_loss:.4f}')
         model.train()
     #===================================================================
     
     me.synchronize_between_processes()
 
-    return {k: meter.global_avg for k, meter in me.meters.items()}, avg_val_loss
-
+    #return {k: meter.global_avg for k, meter in me.meters.items()}, avg_val_loss
+    return {k: meter.global_avg for k, meter in me.meters.items()}
 
 if __name__ == '__main__':
     main_pt()
