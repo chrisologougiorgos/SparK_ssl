@@ -228,22 +228,24 @@ def build_dataset_to_pretrain(dataset_path, input_size) -> Dataset:
     
     full_dataset = ISICDataset(imagenet_folder=dataset_path, train=True, transform=None)
 
-    indices = list(range(len(full_dataset)))
+    #indices = list(range(len(full_dataset)))
+    train_indices = list(range(len(full_dataset)))
     print(f"LEN OF FULL DATASET: {len(full_dataset)}")
-    train_indices, val_indices = train_test_split(
-        indices,
-        test_size = 0,
-        random_state=42,
-        shuffle=True
-    )
+    # train_indices, val_indices = train_test_split(
+    #     indices,
+    #     test_size = 0,
+    #     random_state=42,
+    #     shuffle=True
+    # )
 
     train_ds = Subset(copy.deepcopy(full_dataset), train_indices)
     train_ds.dataset.transform = trans_train
 
-    val_ds = Subset(copy.deepcopy(full_dataset), val_indices)
-    val_ds.dataset.transform = trans_val
+    # val_ds = Subset(copy.deepcopy(full_dataset), val_indices)
+    # val_ds.dataset.transform = trans_val
 
-    print(f"[Dataset] Train size: {len(train_ds)}, Val size: {len(val_ds)}")
+    #print(f"[Dataset] Train size: {len(train_ds)}, Val size: {len(val_ds)}")
+    print(f"[Dataset] Train size: {len(train_ds)}")
     #print_transform(trans_train, '[pre-train]')
 
 
@@ -251,34 +253,34 @@ def build_dataset_to_pretrain(dataset_path, input_size) -> Dataset:
 
 
 
-    print("\n" + "="*30)
-    print("VALIDATION SET FILENAMES")
-    print("="*30)
+    # print("\n" + "="*30)
+    # print("VALIDATION SET FILENAMES")
+    # print("="*30)
     
-    # Παίρνουμε τα paths από το original dataset χρησιμοποιώντας τα indices του validation
-    # Τα ταξινομούμε κιόλας για να είναι εύκολη η σύγκριση αν χρειαστεί
-    val_filenames = [full_dataset.samples[i] for i in val_indices]
+    # # Παίρνουμε τα paths από το original dataset χρησιμοποιώντας τα indices του validation
+    # # Τα ταξινομούμε κιόλας για να είναι εύκολη η σύγκριση αν χρειαστεί
+    # val_filenames = [full_dataset.samples[i] for i in val_indices]
     
-    # Εκτύπωση των πρώτων 20 για γρήγορο έλεγχο
-    for path in val_filenames[:20]:
-        print(os.path.basename(path))
+    # # Εκτύπωση των πρώτων 20 για γρήγορο έλεγχο
+    # for path in val_filenames[:20]:
+    #     print(os.path.basename(path))
         
-    print(f"... and {len(val_filenames) - 20} more.")
-    print("="*30 + "\n")
+    # print(f"... and {len(val_filenames) - 20} more.")
+    # print("="*30 + "\n")
     
-    # (Προαιρετικά) Αποθήκευση σε αρχείο για πλήρη σύγκριση
-    with open("val_set_debug.txt", "w") as f:
-        for path in val_filenames:
-            f.write(os.path.basename(path) + "\n")
-    print("[Debug] All validation filenames saved to val_set_debug.txt")
+    # # (Προαιρετικά) Αποθήκευση σε αρχείο για πλήρη σύγκριση
+    # with open("val_set_debug.txt", "w") as f:
+    #     for path in val_filenames:
+    #         f.write(os.path.basename(path) + "\n")
+    # print("[Debug] All validation filenames saved to val_set_debug.txt")
 
 
 
 
 
     
-    return train_ds, val_ds
-
+    #return train_ds, val_ds
+    return train_ds
 
 def print_transform(transform, s):
     print(f'Transform {s} = ')
