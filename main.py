@@ -49,7 +49,8 @@ def main_pt():
     
     # build data
     print(f'[build data for pre-training] ...\n')
-    dataset_train, dataset_val = build_dataset_to_pretrain(args.data_path, args.input_size)
+    #dataset_train, dataset_val = build_dataset_to_pretrain(args.data_path, args.input_size)
+    dataset_train = build_dataset_to_pretrain(args.data_path, args.input_size)
     data_loader_train = DataLoader(
         dataset=dataset_train, num_workers=args.dataloader_workers, pin_memory=True,
         batch_sampler=DistInfiniteBatchSampler(
@@ -61,18 +62,18 @@ def main_pt():
 
     #=====================VALIDATION========================
 
-    val_sampler = torch.utils.data.distributed.DistributedSampler(
-        dataset_val, num_replicas=dist.get_world_size(), rank=dist.get_rank(), shuffle=False
-    )
+    # val_sampler = torch.utils.data.distributed.DistributedSampler(
+    #     dataset_val, num_replicas=dist.get_world_size(), rank=dist.get_rank(), shuffle=False
+    # )
 
-    data_loader_val = DataLoader(
-        dataset=dataset_val, 
-        batch_size=args.batch_size_per_gpu, 
-        num_workers=args.dataloader_workers, 
-        pin_memory=True, 
-        sampler=val_sampler, 
-        worker_init_fn=worker_init_fn
-    )
+    # data_loader_val = DataLoader(
+    #     dataset=dataset_val, 
+    #     batch_size=args.batch_size_per_gpu, 
+    #     num_workers=args.dataloader_workers, 
+    #     pin_memory=True, 
+    #     sampler=val_sampler, 
+    #     worker_init_fn=worker_init_fn
+    # )
     #=====================================================
 
 
@@ -147,7 +148,8 @@ def main_pt():
             if hasattr(itrt_train, 'set_epoch'):
                 itrt_train.set_epoch(ep)
             
-            stats, last_val_loss = pre_train_one_ep(ep, args, tb_lg, itrt_train, iters_train, model, optimizer, data_loader_val, scaler=scaler)
+            #stats, last_val_loss = pre_train_one_ep(ep, args, tb_lg, itrt_train, iters_train, model, optimizer, data_loader_val, scaler=scaler)
+            stats = pre_train_one_ep(ep, args, tb_lg, itrt_train, iters_train, model, optimizer, scaler=scaler)
             last_loss = stats['last_loss']
             min_loss = min(min_loss, last_loss)
             performance_desc = f'{min_loss:.4f} {last_loss:.4f}'
