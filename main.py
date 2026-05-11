@@ -222,7 +222,8 @@ def main_pt():
     args.log_epoch()
 
 
-def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itrt_train, iters_train, model: DistributedDataParallel, optimizer, data_loader_val, scaler):
+#def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itrt_train, iters_train, model: DistributedDataParallel, optimizer, data_loader_val, scaler):
+def pre_train_one_ep(ep, args: arg_util.Args, tb_lg: misc.TensorboardLogger, itrt_train, iters_train, model: DistributedDataParallel, optimizer, scaler):
     model.train()
     me = misc.MetricLogger(delimiter='  ')
     me.add_meter('max_lr', misc.SmoothedValue(window_size=1, fmt='{value:.5f}'))
