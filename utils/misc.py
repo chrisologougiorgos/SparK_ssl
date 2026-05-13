@@ -165,7 +165,7 @@ def save_checkpoint_model_weights_only(save_to, args, sp_cnn_state):
 def initialize_weight(init_weight: str, model_without_ddp):
     # use some checkpoint as model weight initialization; ONLY load model weights
     if len(init_weight):
-        checkpoint = torch.load(init_weight, 'cpu')
+        checkpoint = torch.load(init_weight, 'cpu', weights_only=True)
         missing, unexpected = model_without_ddp.load_state_dict(checkpoint.get('module', checkpoint), strict=False)
         print(f'[initialize_weight] missing_keys={missing}')
         print(f'[initialize_weight] unexpected_keys={unexpected}')
