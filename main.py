@@ -176,7 +176,7 @@ def main_pt():
             #=======================================================
             
             #==============SAVING EVERY N EPOCHS ==========================
-            N = 100
+            N = 20
             if ep % N == 0:
                misc.save_checkpoint_with_meta_info_and_opt_state(f'{args.model}_{now}_withdecoder_1kpretrained_spark_style_epoch_{ep}.pth', args, ep, performance_desc, model_without_ddp.state_dict(with_config=True), optimizer.state_dict()) 
                misc.save_checkpoint_model_weights_only(f'{args.model}_{now}_1kpretrained_timm_style_epoch_{ep}.pth', args, model_without_ddp.sparse_encoder.sp_cnn.state_dict())
