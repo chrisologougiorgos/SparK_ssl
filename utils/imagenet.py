@@ -207,7 +207,7 @@ def build_dataset_to_pretrain(dataset_path, input_size) -> Dataset:
 
     # Ιδια με το SparK github
     trans_train = transforms.Compose([
-        #transforms.RandomResizedCrop(input_size, scale=(0.67, 1.0), interpolation=interpolation),
+        transforms.RandomResizedCrop(input_size, scale=(0.67, 1.0), interpolation=interpolation),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
